@@ -1,0 +1,68 @@
+﻿name: Build and Deploy HMS Frontend
+name: Build and Deploy HMS Frontend
+name: Build and Deploy HMS Frontend
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+
+concurrency:
+  group: hms-frontend-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Runner diagnostics
+        run: |
+          echo "--- Runner info ---"
+          uname -a || true
+          cat /etc/os-release || true
+          echo "--- Node / npm / pnpm versions ---"
+          node -v || true
+          npm -v || true
+          pnpm -v || true
+          echo "--- Environment vars (truncated) ---"
+          env | sort | sed -n '1,200p' || true
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '10'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck || true
+
+      - name: Run tests
+        run: pnpm test || true
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Upload SPA for Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: dist/spa
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
+        run: pnpm test || true
+
+
+
