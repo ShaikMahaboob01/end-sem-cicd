@@ -19,26 +19,35 @@ Write-Host "Step 1: Ensure pnpm is installed"
 if ($LASTEXITCODE -ne 0) {
   Write-Error "setup.ps1 failed. Fix pnpm installation first."; exit $LASTEXITCODE
 }
+Write-Host "Step 2: Prepare pnpm command (fallback to 'npm exec -- pnpm' if pnpm not in PATH)"
+$pnpmAvailable = (Get-Command pnpm -ErrorAction SilentlyContinue) -ne $null
+function Run-Pnpm {
+  param([Parameter(Mandatory=$true)][string[]]$Args)
+  if ($pnpmAvailable) {
+    & pnpm @Args
+  } else {
+    # Use npm exec to run pnpm without global install
+    & npm exec -- pnpm @Args
+  }
+  return $LASTEXITCODE
+}
 
-Write-Host "Step 2: Install dependencies (pnpm install)"
-pnpm install
-if ($LASTEXITCODE -ne 0) { Write-Error "pnpm install failed"; exit $LASTEXITCODE }
+Write-Host "Step 3: Install dependencies"
+if ((Run-Pnpm -Args @('install')) -ne 0) { Write-Error "pnpm install failed"; exit 1 }
 
-Write-Host "Step 3: Typecheck"
-pnpm typecheck
-if ($LASTEXITCODE -ne 0) { Write-Error "typecheck failed"; exit $LASTEXITCODE }
+Write-Host "Step 4: Typecheck"
+if ((Run-Pnpm -Args @('typecheck')) -ne 0) { Write-Error "typecheck failed"; exit 1 }
 
-Write-Host "Step 4: Run tests"
-pnpm test
-if ($LASTEXITCODE -ne 0) { Write-Error "tests failed"; exit $LASTEXITCODE }
+Write-Host "Step 5: Run tests"
+if ((Run-Pnpm -Args @('test')) -ne 0) { Write-Error "tests failed"; exit 1 }
 
-Write-Host "Step 5: Build"
-pnpm build
-if ($LASTEXITCODE -ne 0) { Write-Error "build failed"; exit $LASTEXITCODE }
+Write-Host "Step 6: Build"
+if ((Run-Pnpm -Args @('build')) -ne 0) { Write-Error "build failed"; exit 1 }
 
 if ($Dev) {
-    Write-Host "Step 6: Starting dev server (pnpm dev)"
-    pnpm dev
+  Write-Host "Step 7: Starting dev server (pnpm dev)"
+  # Start dev server; this will block until terminated
+  if ((Run-Pnpm -Args @('dev')) -ne 0) { Write-Error "pnpm dev failed"; exit 1 }
 }
 
 Write-Host "All steps completed successfully"
