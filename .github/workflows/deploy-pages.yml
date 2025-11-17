@@ -27,10 +27,15 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Show publish directory
+        run: |
+          echo "Publish dir: ./dist/spa"
+          if [ -d "dist/spa" ]; then ls -la dist/spa || true; else echo "dist/spa missing"; exit 1; fi
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/spa
-          publish_branch: gh-pages
-          keep_files: false
+          path: ./dist/spa
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
