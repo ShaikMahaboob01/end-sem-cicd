@@ -15,9 +15,9 @@ param(
 )
 
 Write-Host "Step 1: Ensure pnpm is installed"
-.\n+\scripts\setup.ps1
+.\scripts\setup.ps1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "setup.ps1 failed. Fix pnpm installation first."; exit $LASTEXITCODE
+  Write-Error "setup.ps1 failed. Fix pnpm installation first."; exit $LASTEXITCODE
 }
 
 Write-Host "Step 2: Install dependencies (pnpm install)"
